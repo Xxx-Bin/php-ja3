@@ -43,7 +43,7 @@ curl https://example.com:9763/ja3.php
 #### return
 >{"ja3t_hash":"","ja3_hash":"cd08e314……c695473da9","ja3s_hash":"d7e12962b……f39221f9e8"}
 
-##  catch all requst 
+##  catch all request 
 ```php
 // public ip 
 define('INBOUND','tcp://example.com:443'); 
