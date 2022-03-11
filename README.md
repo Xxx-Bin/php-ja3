@@ -1,15 +1,55 @@
 # php-ja3
 php for SSL/TLS ja3 fingerprint.
-
+This project has two ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)), and the other is to monitor the tcpdump standard output ([ja3_tcpdumpphp](#ja3_tcpdump.php))
 
 ## Installing
 composer install
 
-## Data transfer direction
+## ja3_tcpdump.php
+### Data transfer direction
+```
+brower =>  nginx(https=>http) => /web/ja3.php
+            | |                     A
+             V                     | |
+           tcpdump => stdout =>  ja3_tcpdump.php
+```
+
+### Config
+#### TCPDUMP_LISTEN_INTERFACE
+```php
+// tcpdump listen interface, defautl 1. See 'tcpdump - D' for details
+define('TCPDUMP_LISTEN_INTERFACE',1);
+```
+
+### Run
+```bash
+sudo  php ja3_tcpdump.php start -d
+```
+
+### Tests
+#### request
+```
+curl https://example.com/ja3.php
+```
+
+#### return
+>{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
+
+### Some problems
+1. return none
+    If you visit after a period of time, you will return none. You need to go to the following link to close the socket before the TLS handshake can occur again
+    [chrome://net-internals/#sockets](chrome://net-internals/#sockets)
+2. so slow
+    With curl request, the average time spent is 0.5 minutes 02 ~ 0.6s, mainly due to the slow return of the command Popen ('tcpdump.. '). I don't know how to optimize it
+    
+
+
+
+## wkm_ja3.php
+### Data transfer direction
 > brower => php-ja3(INBOUND) => catch JA3 => php-ja3(OUTBOUND) => nginx(https=>http) => /web/ja3.php
 
-## Config
-### wkm_ja3.php
+### Config
 #### INBOUND
 
 ```php
@@ -34,6 +74,12 @@ server {
     }
 ```
 
+### Run
+```
+php wkm_ja3.php start -d
+``` 
+
+
 ### Tests
 #### request
 ```
@@ -41,9 +87,9 @@ curl https://example.com:9763/ja3.php
 ```
 
 #### return
->{"ja3t_hash":"","ja3_hash":"cd08e314……c695473da9","ja3s_hash":"d7e12962b……f39221f9e8"}
+>{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
 
-##  catch all request 
+###  catch all request 
 ```php
 // public ip 
 define('INBOUND','tcp://example.com:443'); 
@@ -55,8 +101,7 @@ define('OUTBOUND','tcp://127.0.0.1:443');
 
 
 
-
-##  demo 
+###  demo 
 [php-JA3er TLS握手指纹实践](https://bjun.tech/blog/xphp/141#demo_38)
 
 
