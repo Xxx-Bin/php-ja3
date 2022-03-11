@@ -1,0 +1,116 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "75b2c892961845f6f8219867cf17a98a",
+    "packages": [
+        {
+            "name": "workerman/globaldata",
+            "version": "v1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/walkor/GlobalData.git",
+                "reference": "baf3b7af338f329e88136ebe92266dfe40dd00a7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/walkor/GlobalData/zipball/baf3b7af338f329e88136ebe92266dfe40dd00a7",
+                "reference": "baf3b7af338f329e88136ebe92266dfe40dd00a7",
+                "shasum": ""
+            },
+            "require": {
+                "workerman/workerman": ">=3.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "GlobalData\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "homepage": "http://www.workerman.net",
+            "support": {
+                "issues": "https://github.com/walkor/GlobalData/issues",
+                "source": "https://github.com/walkor/GlobalData/tree/v1.0.3"
+            },
+            "time": "2018-08-16T03:59:34+00:00"
+        },
+        {
+            "name": "workerman/workerman",
+            "version": "4.0.29",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/walkor/workerman.git",
+                "reference": "34fa51d178ca620fbe00fc4b55645b876846886f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/walkor/workerman/zipball/34fa51d178ca620fbe00fc4b55645b876846886f",
+                "reference": "34fa51d178ca620fbe00fc4b55645b876846886f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "suggest": {
+                "ext-event": "For better performance. "
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Workerman\\": "./"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "walkor",
+                    "email": "walkor@workerman.net",
+                    "homepage": "http://www.workerman.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "An asynchronous event driven PHP framework for easily building fast, scalable network applications.",
+            "homepage": "http://www.workerman.net",
+            "keywords": [
+                "asynchronous",
+                "event-loop"
+            ],
+            "support": {
+                "email": "walkor@workerman.net",
+                "forum": "http://wenda.workerman.net/",
+                "issues": "https://github.com/walkor/workerman/issues",
+                "source": "https://github.com/walkor/workerman",
+                "wiki": "http://doc.workerman.net/"
+            },
+            "funding": [
+                {
+                    "url": "https://opencollective.com/workerman",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://www.patreon.com/walkor",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2022-02-25T12:16:30+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
+}

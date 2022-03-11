@@ -1,20 +1,14 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
-
-$global = new GlobalData\Client('127.0.0.1:2207');
+require_once __DIR__ . '/../lib/DataShareClinet.php';
+header('Connection: close');
+$global = new DataShareClinet('127.0.0.1:2207');
 $remote_port_key = 'REMOTE_PORT:'.$_SERVER['REMOTE_PORT'];
-if($global->__isset($remote_port_key)){
-    $ja3 = $global->__get($remote_port_key);
-    if(!empty($ja3['session_ticket'])){
-        $ja3['ja3t_hash'] = $ja3['ja3'];
-    }else{
-        $ja3['ja3_hash'] = $ja3['ja3'];
-    }
-    $ja3['ja3s_hash'] = $ja3['ja3s'];
+$t = microtime(1);
+if($ja3 = $global->watch($remote_port_key,1)){
     echo json_encode([
-        'ja3t_hash' => empty($ja3['ja3t_hash']) ? '' : $ja3['ja3t_hash'],
-        'ja3_hash' => empty($ja3['ja3_hash']) ? '' : $ja3['ja3_hash'],
-        'ja3s_hash' => empty($ja3['ja3s_hash']) ? '' : $ja3['ja3s_hash'],
+        'ja3_hash' => empty($ja3['ja3']) ? '' : $ja3['ja3'],
+        'speed_time' => round(microtime(1) - $t,3),
     ]);
 }else{
     echo 'none';
