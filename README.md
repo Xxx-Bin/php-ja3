@@ -1,6 +1,6 @@
 # php-ja3
 php for SSL/TLS ja3 fingerprint.
-This project has two ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)), and the other is to monitor the tcpdump standard output ([ja3_tcpdumpphp](#ja3_tcpdump.php))
+This project has two ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)), and the other is to monitor the tcpdump standard output ([ja3_tcpdump.php](#ja3_tcpdumpphp))
 
 ## Installing
 composer install
@@ -34,6 +34,9 @@ curl https://example.com/ja3.php
 
 #### return
 >{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
+
+### demo and blog
+[php、ja3和tcpdump (TLS握手指纹实践2)](https://bjun.tech/blog/xphp/144#demo_48)
 
 ### Some problems
 1. return none
