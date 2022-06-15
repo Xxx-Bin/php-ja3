@@ -46,7 +46,8 @@ curl https://example.com/ja3.php
     With curl request, the average time spent is 0.5 minutes 02 ~ 0.6s, mainly due to the slow return of the command Popen ('tcpdump.. '). I don't know how to optimize it
     
 
-
+## ja3_tshark.php
+The operation is  same to  ja3_tcpdump. The only thing to note is that the tshark version requires 3.*
 
 ## wkm_ja3.php
 ### Data transfer direction
