@@ -17,7 +17,7 @@ $global_key = [];
 $worker = new Worker();
 $worker->count = 1;
 
-
+$data_age = 60;//second
 $worker->onConnect = function ($connection) {
 
 
@@ -28,12 +28,13 @@ $worker->onMessage = function ($connection, $data) {
 
 
 $worker->onWorkerStart = function ($_worker) use ($worker) {
-    \Workerman\Timer::add(10,function (){
+    global $data_age;
+    \Workerman\Timer::add($data_age,function (){
         global $global;
         global $global_key;
+        global $data_age;
         $t = time();
-        var_dump(__FILE__.' line:'.__LINE__,$global_key);
-        while (($v = current($global_key)) && $v<=$t-10){
+        while (($v = current($global_key)) && $v<=$t-$data_age){
             $global->__unset(key($global_key));
             array_shift($global_key);
         }
@@ -77,31 +78,18 @@ $worker->onWorkerStart = function ($_worker) use ($worker) {
 //                    $package_data = substr($buffer,16,$package_len);
                     $soure_port = unpack('nn', substr($buffer, 16 + 14 + 20, 2));
                     $destination_port = unpack('nn', substr($buffer, 16 + 14 + 20 + 2, 2));
-                    var_dump(__FILE__.' line:'.__LINE__, $soure_port, $destination_port);
 
-                    //  per-packet header 16 , mac frame header 14 ,ip header 20,tcp header 20
+                    //  per-packet header 16 , mac frame header 14 ,ip header 20,tcp header ?
                     $offset = ord(substr($buffer, 16 + 14 + 20 + 12, 1))/16*4;
-                    var_dump(__FILE__.' line:'.__LINE__,$offset);
-
                     $ja3 = Ja3::get(substr($buffer, 16 + 14 + 20 + $offset, $package_len));
                     global $global;
                     global $global_key;
-
                     $global_key['REMOTE_PORT:'.$soure_port['n']] = time();
-                    var_dump($global_key);
                     $global->__set('REMOTE_PORT:'.$soure_port['n'],$ja3);
-                    var_dump(__FILE__.' line:'.__LINE__, $ja3);
-
                     // next paackage
                     $buffer = substr($buffer, 16 + $package_len);
                     $package_len = 0;
                 }
-
-
-                #               $ret = explode("\x45",$data);var_dump($ret);
-//                $ja3 = ja3(substr($data, 42 + 28));
-//                var_dump($ja3);
-//                var_dump(implode(' ', unpack('C*', substr($data, 0))));
 
             } else {
                 echo 'exit';
