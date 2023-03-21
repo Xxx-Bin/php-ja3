@@ -1,9 +1,58 @@
 # php-ja3
 php for SSL/TLS ja3 fingerprint.
-This project has two ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)), and the other is to monitor the tcpdump standard output ([ja3_tcpdump.php](#ja3_tcpdumpphp))
+This project has three ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)) and its improved version([wkm_ja3_ex.php](#wkm_ja3_exphp)) , and the other is to monitor the tcpdump standard output ([ja3_tcpdump.php](#ja3_tcpdumpphp))
+
+
 
 ## Installing
 composer install
+
+## wkm_ja3_ex.php
+### Data transfer direction
+>brower => php-ja3-ex(INBOUND) => catch JA3 => php-ja3-ex(OUTBOUND) => php-ja3-ex(https server)  
+
+### Config
+#### Change TcpConnection.php
+```php
+
+// ./vendor/workerman/workerman/Connection/TcpConnection.php line 745
+
+
+		if(defined('STREAM_CRYPTO_METHOD_SERVER')){
+                         $type = \STREAM_CRYPTO_METHOD_SERVER;
+                }else{
+                        $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
+                }
+
+
+```
+
+#### INBOUND
+
+```php
+// one prot 9764
+define('INBOUND','tcp://0.0.0.0:9764');
+
+```
+#### OUTBOUND 
+
+```php
+//Also Https service
+define('OUTBOUND','tcp://127.0.0.1:9765');
+```
+
+### Run
+```
+php wkm_ja3_ex.php start -d
+```
+### Tests
+#### request
+```
+curl https://example.com:9764/
+```
+
+### demo
+[php-ja3-ex demo](https://bjun.tech/blog/xphp/218#demo_18)
 
 ## ja3_tcpdump.php
 ### Data transfer direction
