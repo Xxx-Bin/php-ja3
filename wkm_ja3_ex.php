@@ -4,7 +4,8 @@ use Workerman\Connection\AsyncTcpConnection;
 use \Workerman\Worker;
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/lib/BinaryStream.php';
-require_once __DIR__.'/lib/Ja3.php';
+require_once __DIR__.'/lib/TLS_FP.php';
+require_once __DIR__.'/lib/TLS_HELLO_PARSE.php';
 require_once __DIR__.'/lib/DataShareServer.php';
 $worker = new DataShareServer('127.0.0.1', 2207);
 $global = new GlobalData\Client('127.0.0.1:2207');
@@ -27,9 +28,10 @@ $web->onConnect = function($connection)
         empty($connection->MEXT_REMOTE_PORT) && $connection->MEXT_REMOTE_PORT = $connection_to_80->getLocalPort();
         if(empty($connection->ja3)){
             global $global;
-            if($ja3 = Ja3::get($data)){
-                $connection->ja3 = $ja3['ja3'];
-                $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$ja3);
+            if($tls = TLS_HELLO_PARSE::get($data)){
+                $tls_pf['client'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>6],'tls'=>$tls]])->ret();
+                $connection->tls_fp_client = 1;
+                $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$tls_pf);
             }
         }
         $connection_to_80->send($data);
@@ -40,11 +42,11 @@ $web->onConnect = function($connection)
     $connection_to_80->onMessage     = function ($source, $data) use (&$connection,$connection_to_80) {
         if(empty($connection->ja3s)){
             global $global;
-            if($ja3 = Ja3::get($data)){
-                $_ja3 =  $global->__get('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT);
-                $_ja3['ja3s'] = $ja3['ja3s'];
-                $connection->ja3s = $ja3['ja3s'];
-                $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$_ja3);
+            if($tls = TLS_HELLO_PARSE::get($data)){
+                $tls_pf =  $global->__get('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT);
+                $tls_pf['sever'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>6],'tls'=>$tls]])->ret_by_server();
+                $connection->tls_fp_server = 1;
+                $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$tls_pf);
             }
         }
         $connection->send($data);

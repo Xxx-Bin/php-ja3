@@ -157,7 +157,9 @@ define('OUTBOUND','tcp://127.0.0.1:443');
 ###  demo 
 [php-JA3er TLS握手指纹实践](https://bjun.tech/blog/xphp/141#demo_38)
 
+## update
 
+2024-03-18 add JA4，about JA4 see[JA4 初探](https://bjun.tech/blog/xphp/246)
 
 ##  relevant 
 [ja3](https://github.com/salesforce/ja3)

@@ -7,6 +7,8 @@ $tcp_data_age = 300;//second
 require_once __DIR__ . '/lib/function.php';
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__.'/lib/DataShareServer.php';
+require_once __DIR__.'/lib/TLS_FP.php';
+require_once __DIR__.'/lib/TLS_HELLO_PARSE.php';
 $worker = new DataShareServer('127.0.0.1', 2207);
 $global = new GlobalData\Client('127.0.0.1:2207');
 $worker = new Worker();
@@ -47,12 +49,17 @@ $worker->onWorkerStart = function($_worker){
                         continue;
                     }
                     $source_port = value_by_key_name($data_pack,'tcp_tcp_srcport');
-                    $tcp_data_arr = json_decode($data_pack,1);
-                    $ja3 = get_ja3_from_tshark_hello($tcp_data_arr);
+
+                    $raw_data = strtr(value_by_key_name($data_pack,'tcp_tcp_payload'),[':'=>'']);
+                    $data = hex2bin(strtr($raw_data,[':'=>'']));
+                    $tls = TLS_HELLO_PARSE::get($data);
+                    $tls_pf['client'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>value_by_key_name($data_pack,'ip_ip_proto')],'tls'=>$tls]])->ret();
+
+
                     global $global;
                     global $global_key;
                     $global_key['REMOTE_PORT:'.$source_port] = time();
-                    $global->__set('REMOTE_PORT:'.$source_port,$ja3);
+                    $global->__set('REMOTE_PORT:'.$source_port,$tls_pf);
                     $data_pack  = '';
                 }else{
                     $data_pack .= $line;

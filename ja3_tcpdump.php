@@ -8,8 +8,9 @@ use \Workerman\WebServer;
 
 require_once __DIR__.'/vendor/autoload.php';
 require_once __DIR__.'/lib/BinaryStream.php';
-require_once __DIR__.'/lib/Ja3.php';
 require_once __DIR__.'/lib/DataShareServer.php';
+require_once __DIR__.'/lib/TLS_FP.php';
+require_once __DIR__.'/lib/TLS_HELLO_PARSE.php';
 $worker = new DataShareServer('127.0.0.1', 2207);
 $global = new GlobalData\Client('127.0.0.1:2207');
 $global_key = [];
@@ -81,11 +82,13 @@ $worker->onWorkerStart = function ($_worker) use ($worker) {
 
                     //  per-packet header 16 , mac frame header 14 ,ip header 20,tcp header ?
                     $offset = ord(substr($buffer, 16 + 14 + 20 + 12, 1))/16*4;
-                    $ja3 = Ja3::get(substr($buffer, 16 + 14 + 20 + $offset, $package_len));
+                    if($tls = TLS_HELLO_PARSE::get(substr($buffer, 16 + 14 + 20 + $offset, $package_len))){
+                        $tls_pf['client'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>6],'tls'=>$tls]])->ret();
+                    }
                     global $global;
                     global $global_key;
                     $global_key['REMOTE_PORT:'.$soure_port['n']] = time();
-                    $global->__set('REMOTE_PORT:'.$soure_port['n'],$ja3);
+                    $global->__set('REMOTE_PORT:'.$soure_port['n'],$tls_pf);
                     // next paackage
                     $buffer = substr($buffer, 16 + $package_len);
                     $package_len = 0;
