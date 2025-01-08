@@ -23,13 +23,16 @@ class TLS_FP
     ];
 
     public static $ssl_version = [
-        0x0100 => "s1",
-        0x0200 => "s2",
-        0x0300 => "s3",
-        0x0301 => "10",
-        0x0302 => "11",
-        0x0303 => "12",
-        0x0304 => "13",
+//        0x0100 => "s1",// SSL 1.0 never existed
+        0x0200 => "s2",//SSL 2.0
+        0x0300 => "s3",//SSL 3.0
+        0x0301 => "10",//TLS 1.0
+        0x0302 => "11",//TLS 1.1
+        0x0303 => "12",//TLS 1.2
+        0x0304 => "13",//TLS 1.3
+        0xfeff => "d1",//DTLS 1.0
+        0xfefd => "d2",//DTLS 1.2
+        0xfefc => "d3",//DTLS 1.3
         0x00 => null,
     ];
     public $hello_data;
