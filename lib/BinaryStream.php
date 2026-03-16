@@ -187,13 +187,21 @@ class BinaryStream {
     }
 
     public function readUInt16() {
-        $a = unpack("nn", $this->read(2));
+        $data = $this->read(2);
+        if (strlen($data) < 2) {
+            return 0;
+        }
+        $a = unpack("nn", $data);
 
         return $a["n"];
     }
 
     public function readUInt16Many($count) {
-        return array_values(unpack("n*", $this->read($count * 2)));
+        $data = $this->read($count * 2);
+        if (strlen($data) < $count * 2) {
+            return array_fill(0, $count, 0);
+        }
+        return array_values(unpack("n*", $data));
     }
 
     public function readUFWord() {
@@ -209,7 +217,11 @@ class BinaryStream {
     }
 
     public function readInt16() {
-        $a = unpack("nn", $this->read(2));
+        $data = $this->read(2);
+        if (strlen($data) < 2) {
+            return 0;
+        }
+        $a = unpack("nn", $data);
         $v = $a["n"];
 
         if ($v >= 0x8000) {
@@ -220,7 +232,11 @@ class BinaryStream {
     }
 
     public function readInt16Many($count) {
-        $vals = array_values(unpack("n*", $this->read($count * 2)));
+        $data = $this->read($count * 2);
+        if (strlen($data) < $count * 2) {
+            return array_fill(0, $count, 0);
+        }
+        $vals = array_values(unpack("n*", $data));
         foreach ($vals as &$v) {
             if ($v >= 0x8000) {
                 $v -= 0x10000;
@@ -247,7 +263,11 @@ class BinaryStream {
     }
 
     public function readUInt32() {
-        $a = unpack("NN", $this->read(4));
+        $data = $this->read(4);
+        if (strlen($data) < 4) {
+            return 0;
+        }
+        $a = unpack("NN", $data);
 
         return $a["N"];
     }

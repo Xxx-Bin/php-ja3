@@ -7,6 +7,15 @@ $loader->addClassMap([
     'Workerman\Protocols\H2'=>__DIR__.'/lib/H2Protocol.php',
 ]);
 
+if (! function_exists("array_key_last")) {
+    function array_key_last($array) {
+        if (!is_array($array) || empty($array)) {
+            return NULL;
+        }
+
+        return array_keys($array)[count($array)-1];
+    }
+}
 use Workerman\Connection\AsyncTcpConnectionEx;
 use \Workerman\Worker;
 require_once __DIR__ . '/lib/BinaryStream.php';
@@ -27,7 +36,7 @@ $global = new GlobalData\Client($globalDataAddress);
 
 // 代理配置
 $inbound = $config['proxy']['inbound_ex'] ?? 'tcp://0.0.0.0:9764';
-$outbound = $config['proxy']['outbound'] ?? 'tcp://127.0.0.1:9765';
+$outbound = $config['proxy']['outbound_ex'] ?? 'tcp://127.0.0.1:9765';
 define('INBOUND', $inbound);
 define('OUTBOUND', $outbound);
 

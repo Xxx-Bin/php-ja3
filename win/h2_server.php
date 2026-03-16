@@ -12,16 +12,36 @@ require_once __DIR__.'/../lib/H2ConnectionManager.php';
 
 use Workerman\Worker;
 
-// 证书配置
+// 加载配置文件
+$configFile = __DIR__ . '/../config.php';
+$config = file_exists($configFile) ? require $configFile : [];
+
+// SSL 配置（从配置文件加载，或使用默认值）
+$sslConfig = $config['ssl'] ?? [
+    'local_cert'  => '',
+    'local_pk'    => '',
+    'verify_peer' => false,
+    'alpn_protocols' => 'h2',
+];
+
+// 服务器配置
+$serverConfig = $config['server'] ?? [
+    'listen' => 'ssl://127.0.0.1:9765',
+    'count' => 1,
+];
+
+// GlobalData 配置
+$globalDataAddress = $config['global_data']['address'] ?? '127.0.0.1:2207';
+
+$global = new GlobalData\Client($globalDataAddress);
+define('STREAM_CRYPTO_METHOD_SERVER', STREAM_CRYPTO_METHOD_ANY_SERVER);
+
+// 构建上下文
 $context = [
     'socket' => ['tcp_nodelay' => true],
-    'ssl' => [
-        'local_cert'  => '',
-        'local_pk'    => '',
-        'verify_peer' => false,
-        'alpn_protocols' => 'h2',
-    ]
+    'ssl' => $sslConfig,
 ];
+
 
 require_once __DIR__ . '/../lib/H2Protocol.php';
 

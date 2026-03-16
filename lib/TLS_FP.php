@@ -144,7 +144,7 @@ class TLS_FP
         }
 
         $ja4_a['max_supported_tls_version'] = sprintf('%02d',
-            empty($tls_version) ? 0 : TLS_FP::$ssl_version[$tls_version]);
+            empty($tls_version) || !isset(TLS_FP::$ssl_version[$tls_version]) ? 0 : TLS_FP::$ssl_version[$tls_version]);
 
         //ja4_a SNI
         $ja4_a['SNI'] = [
@@ -274,7 +274,7 @@ class TLS_FP
         }
 
         $ja4s_a['max_supported_tls_version'] = sprintf('%02d',
-            empty($tls_version) ? 0 : TLS_FP::$ssl_version[$tls_version]);
+            empty($tls_version) || !isset(TLS_FP::$ssl_version[$tls_version]) ? 0 : TLS_FP::$ssl_version[$tls_version]);
 
 
         //ja4s_a number_of_extensions
