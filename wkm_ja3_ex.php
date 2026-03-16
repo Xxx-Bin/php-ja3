@@ -1,17 +1,35 @@
 <?php
 
-use Workerman\Connection\AsyncTcpConnection;
+// 先注册类映射，确保在 autoload 之前
+$loader = require_once __DIR__ . '/vendor/autoload.php';
+$loader->addClassMap([
+    'Workerman\Connection\TcpConnection'=>__DIR__.'/lib/TcpConnection.php',
+    'Workerman\Protocols\H2'=>__DIR__.'/lib/H2Protocol.php',
+]);
+
+use Workerman\Connection\AsyncTcpConnectionEx;
 use \Workerman\Worker;
-require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/lib/BinaryStream.php';
 require_once __DIR__.'/lib/TLS_FP.php';
 require_once __DIR__.'/lib/TLS_HELLO_PARSE.php';
+require_once __DIR__.'/lib/H2Driver.php';
+require_once __DIR__.'/lib/AsyncTcpConnectionEx.php';
 require_once __DIR__.'/lib/DataShareServer.php';
-$worker = new DataShareServer('127.0.0.1', 2207);
-$global = new GlobalData\Client('127.0.0.1:2207');
 
-define('INBOUND','tcp://0.0.0.0:9764');
-define('OUTBOUND','tcp://127.0.0.1:9765');
+// 加载配置文件
+$configFile = __DIR__ . '/config.php';
+$config = file_exists($configFile) ? require $configFile : [];
+
+// GlobalData 配置
+$globalDataAddress = $config['global_data']['address'] ?? '127.0.0.1:2207';
+$worker = new DataShareServer(explode(':', $globalDataAddress)[0], intval(explode(':', $globalDataAddress)[1]));
+$global = new GlobalData\Client($globalDataAddress);
+
+// 代理配置
+$inbound = $config['proxy']['inbound_ex'] ?? 'tcp://0.0.0.0:9764';
+$outbound = $config['proxy']['outbound'] ?? 'tcp://127.0.0.1:9765';
+define('INBOUND', $inbound);
+define('OUTBOUND', $outbound);
 
 $web = new Worker(INBOUND);
 $web->count = 1;
@@ -21,31 +39,37 @@ $web->onConnect = function($connection)
 {
 
 
-    $connection_to_80 = new AsyncTcpConnection(OUTBOUND);
+    $connection_to_80 = new AsyncTcpConnectionEx(OUTBOUND);
     $connection->pipe($connection_to_80);
+    
     $connection->onMessage     = function ($source, $data) use ($connection_to_80,&$connection) {
-
+        
         empty($connection->MEXT_REMOTE_PORT) && $connection->MEXT_REMOTE_PORT = $connection_to_80->getLocalPort();
-        if(empty($connection->ja3)){
-            global $global;
+        
+        global $global;
+        
+        if(empty($connection->tls_fp_client)){
             if($tls = TLS_HELLO_PARSE::get($data)){
                 $tls_pf['client'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>6],'tls'=>$tls]])->ret();
                 $connection->tls_fp_client = 1;
+                
                 $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$tls_pf);
             }
         }
+        
         $connection_to_80->send($data);
 
     };
 
     $connection_to_80->pipe($connection);
     $connection_to_80->onMessage     = function ($source, $data) use (&$connection,$connection_to_80) {
-        if(empty($connection->ja3s)){
+        if(empty($connection->tls_fp_server)){
             global $global;
             if($tls = TLS_HELLO_PARSE::get($data)){
-                $tls_pf =  $global->__get('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT);
+                $tls_pf =  $global->__get('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT) ?: [];
                 $tls_pf['sever'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>6],'tls'=>$tls]])->ret_by_server();
                 $connection->tls_fp_server = 1;
+                
                 $global->__set('REMOTE_PORT:'.$connection->MEXT_REMOTE_PORT,$tls_pf);
             }
         }
@@ -63,44 +87,10 @@ $web->onConnect = function($connection)
 
 };
 
-//Need to add the following to ./vendor/workerman/workerman/Connection/TcpConnection.php line 745
-/*
 
-		if(defined('STREAM_CRYPTO_METHOD_SERVER')){
-                 $type = \STREAM_CRYPTO_METHOD_SERVER;
-        }else{
-                $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
-        }
- */
-define('STREAM_CRYPTO_METHOD_SERVER',STREAM_CRYPTO_METHOD_ANY_SERVER );
-// 证书最好是申请的证书
-$context = array(
-    'socket' => [
-        'tcp_nodelay' => true,
-    ],
-    // For more ssl options, please refer to the manual https://php.net/manual/zh/context.ssl.php
-    'ssl' => array(
-        // Please use absolute path
-        'local_cert'                 => '/path/server.cer', // 也可以是crt文件It can also be a crt file
-        'local_pk'                   => '/path/server.key',
-        'verify_peer'               => false,
-        // 'allow_self_signed' => true, //If it is a self-signed certificate, this option needs to be enabled
-        //      'ssltransport'=>'tlsv1.3'
-    )
-);
+// 引入 H2 协议
+require_once __DIR__ . '/win/h2_server_fp.php';
 
-
-$http = new Worker(strtr(OUTBOUND,['tcp'=>'http']),$context);
-$http->count = 1;
-$http->transport  = 'ssl';
-
-$http->onMessage = function($connection, $data)
-{
-
-    global $global;
-    $_ja3 =  $global->__get('REMOTE_PORT:'.$connection->getRemotePort());
-    $connection->send(json_encode($_ja3));
-};
 
 
 

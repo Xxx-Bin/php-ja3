@@ -1,167 +1,341 @@
 # php-ja3
-php for SSL/TLS ja3 fingerprint.
-This project has three ideas, one is to cooperate with the web server ([wkm_ja3.php](#wkm_ja3php)) and its improved version([wkm_ja3_ex.php](#wkm_ja3_exphp)) , and the other is to monitor the tcpdump standard output ([ja3_tcpdump.php](#ja3_tcpdumpphp))
 
+PHP implementation for SSL/TLS JA3 fingerprint and HTTP/2 fingerprint.
 
+This project provides three deployment modes:
+1. **Web server integration** ([wkm_ja3.php](#wkm_ja3php) and improved [wkm_ja3_ex.php](#wkm_ja3_exphp))
+2. **TCPdump monitoring** ([ja3_tcpdump.php](#ja3_tcpdumpphp))
+3. **Standalone HTTP/2 server** ([win/h2_server*.php](#standalone-http2-servers))
 
-## Installing
+## Features
+
+- **TLS Fingerprint**: JA3, JA4 (Client Hello), JA3S (Server Hello)
+- **HTTP/2 Fingerprint**: Settings, Window Update, Priority, Pseudo Headers
+- **Modular Architecture**: Core protocol and extensions separated
+- **PHP 8.2+ Compatible**: No dynamic properties
+
+## Installation
+
+```bash
 composer install
+```
+
+## Standalone HTTP/2 Servers
+
+New modular HTTP/2 servers with fingerprint support.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Application Layer                       │
+│  ┌──────────────┐  ┌──────────────┐                        │
+│  │ h2_server.php│  │h2_server_fp. │                        │
+│  │   (Basic)    │  │    php       │                        │
+│  │              │  │(Fingerprint) │                        │
+│  └──────┬───────┘  └──────┬───────┘                        │
+└─────────┼─────────────────┼────────────────────────────────┘
+          │                 │
+          └─────────────────┼───────────────────┐
+                            │                   │
+┌───────────────────────────▼───────────────────▼─────────────┐
+│                     H2Driver                                 │
+│              (HTTP/2 Connection Driver)                      │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+┌─────────▼──────┐ ┌────────▼────────┐ ┌─────▼──────────┐
+│ H2Protocol     │ │ H2Fingerprint   │ │   Other        │
+│   Parser       │ │   Extension     │ │  Extensions    │
+│  (Core)        │ │ (Fingerprint)   │ │                │
+└────────────────┘ └─────────────────┘ └────────────────┘
+```
+
+See [doc/architecture.md](doc/architecture.md) for detailed architecture documentation.
+
+### h2_server.php (Basic)
+
+Minimal HTTP/2 server without fingerprint collection.
+
+**Run:**
+```bash
+php win/h2_server.php start
+```
+
+### h2_server_fp.php (Fingerprint)
+
+HTTP/2 server with fingerprint collection.
+
+**Features:**
+- HTTP/2 fingerprint extraction
+- Settings, Window Update, Priority, Pseudo Headers
+
+**Run:**
+```bash
+php win/h2_server_fp.php start
+```
+
+**Response:**
+```json
+{
+    "http2": {
+        "fingerprint_str": "1:65536;3:1000;4:6291456;6:262144|15663105|0|m,p,s,a",
+        "fingerprint": {
+            "S[;]": "1:65536;3:1000;4:6291456;6:262144",
+            "WU": 15663105,
+            "P[,]": null,
+            "PS[,]": ["m", "p", "s", "a"]
+        }
+    },
+    "request": {
+        "stream_id": 1,
+        "headers": {":method": "GET", ":path": "/", ...},
+        "address": "127.0.0.1:12345"
+    }
+}
+```
+
+### HTTP/2 Fingerprint Format
+
+```
+SETTINGS|WINDOW_UPDATE|PRIORITY|PSEUDO_HEADERS
+
+Example:
+1:65536;3:1000;4:6291456;6:262144|15663105|0|m,p,s,a
+```
+
+- **SETTINGS**: `id:value;id:value;...`
+- **WINDOW_UPDATE**: Connection-level window size
+- **PRIORITY**: Priority frame info or `0`
+- **PSEUDO_HEADERS**: Order of pseudo headers (`m`=`:method`, `p`=`:path`, `s`=`:scheme`, `a`=`:authority`)
 
 ## wkm_ja3_ex.php
-### Data transfer direction
->brower => php-ja3-ex(INBOUND) => catch JA3 => php-ja3-ex(OUTBOUND) => php-ja3-ex(https server)  
 
-### Config
-#### Change TcpConnection.php
+### Data Flow
+
+```
+Browser => php-ja3-ex(INBOUND) => Capture JA3/JA4 + HTTP/2 Fingerprint 
+                                    => php-ja3-ex(OUTBOUND) 
+                                    => HTTPS Server
+```
+
+### Features
+
+- TLS Client Hello fingerprint (JA3, JA4)
+- TLS Server Hello fingerprint (JA3S)
+- HTTP/2 fingerprint (Settings, Priority, Window Update, Pseudo Headers)
+
+### Configuration
+
+#### 1. Modify TcpConnection.php
+
 ```php
-
 // ./vendor/workerman/workerman/Connection/TcpConnection.php line 745
 
-
-		if(defined('STREAM_CRYPTO_METHOD_SERVER')){
-                         $type = \STREAM_CRYPTO_METHOD_SERVER;
-                }else{
-                        $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
-                }
-
-
+if(defined('STREAM_CRYPTO_METHOD_SERVER')){
+    $type = \STREAM_CRYPTO_METHOD_SERVER;
+}else{
+    $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
+}
 ```
 
-#### INBOUND
+#### 2. Set INBOUND/OUTBOUND
 
 ```php
-// one prot 9764
+// INBOUND - Port for client connections
 define('INBOUND','tcp://0.0.0.0:9764');
 
-```
-#### OUTBOUND 
-
-```php
-//Also Https service
+// OUTBOUND - Backend HTTPS server
 define('OUTBOUND','tcp://127.0.0.1:9765');
 ```
 
 ### Run
-```
+
+```bash
 php wkm_ja3_ex.php start -d
 ```
-### Tests
-#### request
-```
+
+### Test
+
+```bash
 curl https://example.com:9764/
 ```
 
-### demo
+### Response (JSON)
+
+```json
+{
+    "tls": {
+        "ja3": "hash_value",
+        "ja3_str": "771,4865-4866-...",
+        "ja4": "t13d1511h2_...",
+        "ja4_o": "t13d1511h2_..."
+    },
+    "tls_server": {
+        "ja3s": "hash_value",
+        "ja3s_str": "771,4865-..."
+    },
+    "http2": {
+        "fingerprint": "1:65536;3:1000;4:6291456;6:262144|00|0|m,p,s,a",
+        "settings": "1:65536;3:1000;4:6291456;6:262144",
+        "window_update": "15663105",
+        "priority": null,
+        "pseudo_headers": "m,p,s,a"
+    }
+}
+```
+
+### Demo
+
 [php-ja3-ex demo](https://bjun.tech/blog/xphp/218#demo_18)
 
 ## ja3_tcpdump.php
-### Data transfer direction
+
+### Data Flow
+
 ```
-brower =>  nginx(https=>http) => /web/ja3.php
+Browser => nginx(https=>http) => /web/ja3.php
             | |                     A
              V                     | |
            tcpdump => stdout =>  ja3_tcpdump.php
 ```
 
-### Config
+### Configuration
+
 #### TCPDUMP_LISTEN_INTERFACE
+
 ```php
-// tcpdump listen interface, defautl 1. See 'tcpdump - D' for details
+// tcpdump listen interface, default 1. See 'tcpdump -D' for details
 define('TCPDUMP_LISTEN_INTERFACE',1);
 ```
 
 ### Run
+
 ```bash
-sudo  php ja3_tcpdump.php start -d
+sudo php ja3_tcpdump.php start -d
 ```
 
-### Tests
-#### request
-```
+### Test
+
+```bash
 curl https://example.com/ja3.php
 ```
 
-#### return
->{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
+### Response
 
-### demo and blog
+```json
+{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
+```
+
+### Demo and Blog
+
 [php、ja3和tcpdump (TLS握手指纹实践2)](https://bjun.tech/blog/xphp/144#demo_48)
 
-### Some problems
-1. return none
-    If you visit after a period of time, you will return none. You need to go to the following link to close the socket before the TLS handshake can occur again
-    [chrome://net-internals/#sockets](chrome://net-internals/#sockets)
-2. so slow
-    With curl request, the average time spent is 0.5 minutes 02 ~ 0.6s, mainly due to the slow return of the command Popen ('tcpdump.. '). I don't know how to optimize it
-    
+### Known Issues
+
+1. **Return none**: If you visit after a period of time, you may get no response. Close sockets at [chrome://net-internals/#sockets](chrome://net-internals/#sockets)
+2. **Slow**: Average time is 0.5~0.6s due to tcpdump command execution
 
 ## ja3_tshark.php
-The operation is  same to  ja3_tcpdump. The only thing to note is that the tshark version requires 3.*
+
+Same operation as ja3_tcpdump. Requires tshark version 3.x.
 
 ## wkm_ja3.php
-### Data transfer direction
-> brower => php-ja3(INBOUND) => catch JA3 => php-ja3(OUTBOUND) => nginx(https=>http) => /web/ja3.php
 
-### Config
+### Data Flow
+
+```
+Browser => php-ja3(INBOUND) => Capture JA3 
+            => php-ja3(OUTBOUND) 
+            => nginx(https=>http) 
+            => /web/ja3.php
+```
+
+### Configuration
+
 #### INBOUND
 
 ```php
-// one prot 9763
 define('INBOUND','tcp://0.0.0.0:9763');
-
 ```
+
 #### OUTBOUND
+
 ```php
 define('OUTBOUND','tcp://example.com:443');
 ```
 
-### nginx 
-```ngixn
+#### Nginx Config
+
+```nginx
 server {
-    listen :443 ssl ;
+    listen :443 ssl;
     server_name example.com;
-    …… ssl set
+    # ... ssl settings
     root "pathto/php-ja3/web";
     location ~ \.php(.*)$ {
-    ……  
+        # ... php settings
     }
+}
 ```
 
 ### Run
-```
+
+```bash
 php wkm_ja3.php start -d
-``` 
-
-
-### Tests
-#### request
 ```
+
+### Test
+
+```bash
 curl https://example.com:9763/ja3.php
 ```
 
-#### return
->{"ja3_hash":"0d69ff4……2834766","speed_time":0.402}
+### Demo
 
-###  catch all request 
-```php
-// public ip 
-define('INBOUND','tcp://example.com:443'); 
-// private ip (nginx need to listen it too)
-define('OUTBOUND','tcp://127.0.0.1:443');
-```
-
-
-
-
-
-###  demo 
 [php-JA3er TLS握手指纹实践](https://bjun.tech/blog/xphp/141#demo_38)
 
-## update
+## Project Structure
 
-2024-03-18 add JA4，about JA4 see[JA4 初探](https://bjun.tech/blog/xphp/246)
+```
+php-ja3/
+├── lib/                          # Core library
+│   ├── H2CoreInterface.php       # HTTP/2 core interface
+│   ├── H2ProtocolParser.php      # HTTP/2 protocol parser
+│   ├── H2Driver.php              # HTTP/2 connection driver
+│   ├── H2Stream.php              # HTTP/2 stream management
+│   ├── H2ExtensionInterface.php  # Extension interface
+│   ├── H2ExtensionManager.php    # Extension manager
+│   ├── H2FingerprintExtension.php # Fingerprint extension
+│   ├── H2ConnectionManager.php   # Connection data manager
+│   ├── H2Protocol.php            # Workerman protocol
+│   ├── HPACK.php                 # HPACK codec
+│   └── ...
+├── win/                          # Windows server examples
+│   ├── h2_server.php             # Basic HTTP/2 server
+│   └── h2_server_fp.php          # Fingerprint server
+├── doc/                          # Documentation
+│   └── architecture.md           # Architecture documentation
+├── web/                          # Web examples
+├── wkm_ja3.php                   # Basic proxy mode
+├── wkm_ja3_ex.php                # Extended proxy mode
+├── ja3_tcpdump.php               # TCPdump mode
+└── ja3_tshark.php                # Tshark mode
+```
 
-##  relevant 
-[ja3](https://github.com/salesforce/ja3)
+## Update History
 
-[workerman](https://github.com/walkor/workerman)
+- **2024-03-18**: Add JA4 support ([JA4 初探](https://bjun.tech/blog/xphp/246))
+- **2025-03-12**: Add HTTP/2 fingerprint support in wkm_ja3_ex.php
+- **2025-03-17**: Refactor to modular architecture (core and extensions separated)
+- **2025-03-17**: Add PHP 8.2+ compatibility (remove dynamic properties)
+
+## References
+
+- [JA3](https://github.com/salesforce/ja3) - TLS fingerprinting
+- [Workerman](https://github.com/walkor/workerman) - PHP async framework
+
+## License
+
+MIT License

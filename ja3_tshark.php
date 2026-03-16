@@ -50,7 +50,12 @@ $worker->onWorkerStart = function($_worker){
                     }
                     $source_port = value_by_key_name($data_pack,'tcp_tcp_srcport');
 
-                    $raw_data = strtr(value_by_key_name($data_pack,'tcp_tcp_payload'),[':'=>'']);
+                    if(strpos($data_pack,'tcp_tcp_reassembled_data')!==false){
+                        $raw_data = strtr(value_by_key_name($data_pack,'tcp_tcp_reassembled_data'),[':'=>'']);
+                    }else{
+                        $raw_data = strtr(value_by_key_name($data_pack,'tcp_tcp_payload'),[':'=>'']);
+                    }
+
                     $data = hex2bin(strtr($raw_data,[':'=>'']));
                     $tls = TLS_HELLO_PARSE::get($data);
                     $tls_pf['client'] = TLS_FP::init(['layers'=>['ip'=>['ip_ip_proto'=>value_by_key_name($data_pack,'ip_ip_proto')],'tls'=>$tls]])->ret();

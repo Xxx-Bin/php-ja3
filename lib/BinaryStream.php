@@ -448,6 +448,7 @@ class BinaryStream {
     public function setContent($content)
     {
         $this->content = $content;
+        $this->offset = 0;
 
         return $this;
     }
