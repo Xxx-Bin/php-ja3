@@ -302,6 +302,7 @@ class H2ProtocolParser implements H2CoreInterface
     private function parseHeaders(string $data, int $flags, int $streamId): void
     {
         $offset = 0;
+        $padding = 0;
         $isPadded = ($flags & self::FLAG_PADDED) !== 0;
         $isPriority = ($flags & self::FLAG_PRIORITY) !== 0;
         $endStream = ($flags & self::FLAG_END_STREAM) !== 0;
@@ -313,16 +314,18 @@ class H2ProtocolParser implements H2CoreInterface
         }
 
         if ($isPriority && strlen($data) >= $offset + 5) {
+            $priorityData = substr($data, $offset, 5);
             $offset += 5;
-            $parsed = unpack('Nparent/Cweight', substr($data, 0, 5));
+            $parsed = unpack('Nparent/Cweight', $priorityData);
             $parentId = $parsed['parent'] & 0x7fffffff;
             $exclusive = ($parsed['parent'] & 0x80000000) !== 0;
             $weight = $parsed['weight'] + 1 ;
             $this->triggerPriorityCallback($streamId, $parentId, $weight, $exclusive);
         }
 
-        if (strlen($data) > $offset) {
-            $headerBlock = substr($data, $offset);
+        $headerBlockLength = strlen($data) - $offset - $padding;
+        if ($headerBlockLength > 0) {
+            $headerBlock = substr($data, $offset, $headerBlockLength);
 
             try {
                 $headers = $this->hpackDecoder->decode($headerBlock);
