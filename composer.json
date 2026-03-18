@@ -1,5 +1,6 @@
 {
-  "require": {  
-    "workerman/globaldata": "^1.0"
+  "require": {
+    "workerman/globaldata": "^1.0",
+    "amphp/hpack": "^3.0"
   }
 }
