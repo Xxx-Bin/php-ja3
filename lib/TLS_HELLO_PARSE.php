@@ -6,11 +6,11 @@ class TLS_HELLO_PARSE
 {
 
 
-    //https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
-    // last update 2023-12-14
-    //devtools run js
-    // let arr=[];$('#table-tls-extensiontype-values-1 tr').map((e,v,item)=>{let id=$(v).children('td').eq(0).text();let name=$(v).children('td').eq(1).text().replace(/\([\S\s]*\)/,'');if(name&&!/Reserved|Unassigned/.test(name)){arr.push('"'+id+'"=>"'+name+'"')}});arr.join(',')
+    // https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
+    // Last Updated: 2026-03-16
+    // Source: IANA TLS ExtensionType Values Registry
     static $tls_extension_type_values = [
+        // Standard Extensions (0-61)
         "0" => "server_name",
         "1" => "max_fragment_length",
         "2" => "client_certificate_url",
@@ -62,7 +62,7 @@ class TLS_HELLO_PARSE
         "50" => "signature_algorithms_cert",
         "51" => "key_share",
         "52" => "transparency_info",
-        "53" => "connection_id",
+        "53" => "connection_id_deprecated",
         "54" => "connection_id",
         "55" => "external_id_hash",
         "56" => "external_session_id",
@@ -71,16 +71,42 @@ class TLS_HELLO_PARSE
         "59" => "dnssec_chain",
         "60" => "sequence_number_encryption_algorithms",
         "61" => "rrc",
+        "62" => "tls_flags",
+
+        // GREASE Values (Reserved for Extensibility Testing) [RFC8701]
+        "2570" => "grease_reserved_2570",
+        "6682" => "grease_reserved_6682",
+        "10794" => "grease_reserved_10794",
+        "14906" => "grease_reserved_14906",
+        "19018" => "grease_reserved_19018",
+        "23130" => "grease_reserved_23130",
+        "27242" => "grease_reserved_27242",
+        "31354" => "grease_reserved_31354",
+        "35466" => "grease_reserved_35466",
+        "39578" => "grease_reserved_39578",
+        "43690" => "grease_reserved_43690",
+        "47802" => "grease_reserved_47802",
+        "51914" => "grease_reserved_51914",
+        "56026" => "grease_reserved_56026",
+        "60138" => "grease_reserved_60138",
+        "64250" => "grease_reserved_64250",
+
+        // ECH Extensions
         "64768" => "ech_outer_extensions",
         "65037" => "encrypted_client_hello",
-        "65281" => "renegotiation_info",
 
-        "13172"=>"next_protocol_negotiation",/* 0x3374 */
-        "17513"=>"application_settings",/* draft-vvv-tls-alps-01, temporary value used in BoringSSL implementation */
-        "30031"=>"channel_id_old   ",/* 0x754f */
-        "30032"=>"channel_id ",/* 0x7550 */
-        "65445"=>"quic_transport_parameters",/* 0xffa5 draft-ietf-quic-tls-13 */
-        "65486"=>"encrypted_server_name",/* 0xffce draft-ietf-tls-esni-01 */
+        // Private Use Range Start
+        "65280" => "private_use_start",
+        "65281" => "renegotiation_info",
+        "65282" => "private_use_65282",
+
+        // Legacy/Deprecated Extensions
+        "13172" => "next_protocol_negotiation",
+        "17513" => "application_settings",
+        "30031" => "channel_id_old",
+        "30032" => "channel_id",
+        "65445" => "quic_transport_parameters_legacy",
+        "65486" => "encrypted_server_name",
     ];
 
     public static function get($tcp_data)
@@ -175,55 +201,6 @@ class TLS_HELLO_PARSE
                 }
                 
             }
-
-//            //Type: supported_groups (10)
-//            $ret += self::extensions_supported_groups($BinaryStream, $extensions_arr_by_type);
-//            $EllipticCurve = &$ret['tls_tls_handshake_extensions_supported_group'];
-//
-//
-//            //Type: ec_point_formats (11)
-//            $ret += self::extensions_ec_point_formats($BinaryStream, $extensions_arr_by_type);
-//            $EllipticCurvePointFormat = &$ret['tls_tls_handshake_extensions_ec_point_format'];
-//
-//
-//            //  Extension: signature_algorithms (13)
-//            $ret += self::extensions_signature_algorithms($BinaryStream, $extensions_arr_by_type);
-//            $SignatureHashAlgorithm = &$ret['tls_tls_handshake_sig_hash_alg'];
-//
-//
-//            // Extension: server_name (0)
-//            $ret += self::extensions_server_name($BinaryStream, $extensions_arr_by_type);
-//
-//            // Type: supported_versions (43)
-//            $ret += self::extensions_supported_versions($BinaryStream, $extensions_arr_by_type);
-//
-//            //Type: application_layer_protocol_negotiation (16)
-//            $ret += self::extensions_application_layer_protocol_negotiation($BinaryStream, $extensions_arr_by_type);
-//
-//
-//            //Type: status_request (5)
-//            $ret += self::extensions_status_request($BinaryStream, $extensions_arr_by_type);
-//
-//            //Type: renegotiation_info (65281)
-//            $ret += self::extensions_renegotiation_info($BinaryStream, $extensions_arr_by_type);
-//
-//            //Type: psk_key_exchange_modes (45)
-//
-//            $ret += self::extensions_psk_key_exchange_modes($BinaryStream, $extensions_arr_by_type);
-//
-//            //Type: application_settings (17513)
-//            $ret += self::extensions_application_settings($BinaryStream, $extensions_arr_by_type);
-//
-//
-//            //Type: encrypted_client_hello (65037)
-//            $ret += self::extension_encrypted_client_hello($BinaryStream, $extensions_arr_by_type);
-//
-//
-//            //Type: compress_certificate (27)
-//            $ret += self::extensions_compress_certificate($BinaryStream, $extensions_arr_by_type);
-//
-//            //Type: key_share (51)
-//            $ret += self::extensions_key_share($BinaryStream, $extensions_arr_by_type);
 
 
             return $ret;
@@ -365,7 +342,7 @@ class TLS_HELLO_PARSE
     }
 
 
-    //Type: application_layer_protocol_negotiation (16)
+    // Type: application_layer_protocol_negotiation (16)
     public static function extensions_application_layer_protocol_negotiation(&$BinaryStream, &$extensions_arr_by_type)
     {
         $ret = [];
@@ -413,11 +390,241 @@ class TLS_HELLO_PARSE
         return $ret;
     }
 
-
-    private static function add_item_sig_hash()
+    // Type: key_share (51) - TLS 1.3
+    public static function extensions_key_share(&$BinaryStream, &$extensions_arr_by_type)
     {
-        
+        $ret = [];
+        if (!empty($extensions_arr_by_type['51'])) {
+            $length = $extensions_arr_by_type['51']['length'];
+            $offset = $extensions_arr_by_type['51']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 2) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_key_share_len' => BinaryStream::uint16,
+                ]);
+
+                $key_shares = [];
+                $bytes_read = 2;
+                $i = 0;
+
+                while ($bytes_read < $length && $i < 100) { // 限制最多 100 个 key shares
+                    if ($length - $bytes_read < 4) break;
+
+                    $group = $BinaryStream->unpack(['group' => BinaryStream::uint16]);
+                    $key_exchange_len = $BinaryStream->unpack(['len' => BinaryStream::uint16]);
+
+                    $bytes_read += 4;
+
+                    if ($key_exchange_len['len'] > 0 && $bytes_read + $key_exchange_len['len'] <= $length) {
+                        $key_exchange = $BinaryStream->unpack([
+                            'key_exchange' => [BinaryStream::uint8, $key_exchange_len['len'], 'Unit8ManyToHexStr']
+                        ]);
+
+                        $key_shares[] = [
+                            'group' => $group['group'],
+                            'key_exchange' => $key_exchange['key_exchange'] ?? ''
+                        ];
+                        $bytes_read += $key_exchange_len['len'];
+                    }
+                    $i++;
+                }
+
+                $ret['tls_tls_handshake_extensions_key_shares'] = $key_shares;
+            }
+        }
+
+        return $ret;
     }
 
+    // Type: psk_key_exchange_modes (45) - TLS 1.3
+    public static function extensions_psk_key_exchange_modes(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['45'])) {
+            $length = $extensions_arr_by_type['45']['length'];
+            $offset = $extensions_arr_by_type['45']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 1) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_psk_ke_modes_len' => BinaryStream::uint8,
+                ]);
+
+                $modes_len = $ret['tls_tls_handshake_extensions_psk_ke_modes_len'] ?? 0;
+                if ($modes_len > 0 && $modes_len <= $length - 1) {
+                    $ret += $BinaryStream->unpack([
+                        'tls_tls_handshake_extensions_psk_ke_modes' => [BinaryStream::uint8, $modes_len],
+                    ]);
+                }
+            }
+        }
+
+        return $ret;
+    }
+
+    // Type: early_data (42) - TLS 1.3
+    public static function extensions_early_data(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['42'])) {
+            $length = $extensions_arr_by_type['42']['length'];
+            $offset = $extensions_arr_by_type['42']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            // early_data 在 ClientHello 中可以为空
+            // 在 NewSessionTicket 中包含 max_early_data_size
+            if ($length >= 4) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_max_early_data_size' => BinaryStream::uint32,
+                ]);
+            }
+
+            $ret['tls_tls_handshake_extensions_early_data_present'] = true;
+        }
+
+        return $ret;
+    }
+
+    // Type: cookie (44) - TLS 1.3
+    public static function extensions_cookie(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['44'])) {
+            $length = $extensions_arr_by_type['44']['length'];
+            $offset = $extensions_arr_by_type['44']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 2) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_cookie_len' => BinaryStream::uint16,
+                ]);
+
+                $cookie_len = $ret['tls_tls_handshake_extensions_cookie_len'] ?? 0;
+                if ($cookie_len > 0 && $cookie_len <= $length - 2) {
+                    $ret += $BinaryStream->unpack([
+                        'tls_tls_handshake_extensions_cookie' => [BinaryStream::uint8, $cookie_len, 'Unit8ManyToHexStr'],
+                    ]);
+                }
+            }
+        }
+
+        return $ret;
+    }
+
+    // Type: certificate_authorities (47) - TLS 1.3
+    public static function extensions_certificate_authorities(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['47'])) {
+            $length = $extensions_arr_by_type['47']['length'];
+            $offset = $extensions_arr_by_type['47']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 2) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_ca_list_len' => BinaryStream::uint16,
+                ]);
+
+                $ca_list_len = $ret['tls_tls_handshake_extensions_ca_list_len'] ?? 0;
+                $bytes_read = 2;
+                $authorities = [];
+                $i = 0;
+
+                while ($bytes_read < $ca_list_len && $i < 50) { // 限制最多 50 个 CA
+                    if ($ca_list_len - $bytes_read < 2) break;
+
+                    $dn_len = $BinaryStream->unpack(['len' => BinaryStream::uint16]);
+                    $bytes_read += 2;
+
+                    if ($dn_len['len'] > 0 && $bytes_read + $dn_len['len'] <= $ca_list_len) {
+                        $dn = $BinaryStream->unpack([
+                            'dn' => [BinaryStream::uint8, $dn_len['len'], 'Unit8ManyToHexStr']
+                        ]);
+                        $authorities[] = $dn['dn'] ?? '';
+                        $bytes_read += $dn_len['len'];
+                    }
+                    $i++;
+                }
+
+                $ret['tls_tls_handshake_extensions_authorities'] = $authorities;
+            }
+        }
+
+        return $ret;
+    }
+
+    // Type: compress_certificate (27)
+    public static function extensions_compress_certificate(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['27'])) {
+            $length = $extensions_arr_by_type['27']['length'];
+            $offset = $extensions_arr_by_type['27']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 1) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_cert_compression_algorithms_len' => BinaryStream::uint8,
+                ]);
+
+                $algorithms_len = $ret['tls_tls_handshake_extensions_cert_compression_algorithms_len'] ?? 0;
+                if ($algorithms_len > 0 && $algorithms_len <= $length - 1) {
+                    $count = intval($algorithms_len / 2);
+                    $ret += $BinaryStream->unpack([
+                        'tls_tls_handshake_extensions_cert_compression_algorithms' => [BinaryStream::uint16, $count],
+                    ]);
+                }
+            }
+        }
+
+        return $ret;
+    }
+
+    // Type: record_size_limit (28)
+    public static function extensions_record_size_limit(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['28'])) {
+            $length = $extensions_arr_by_type['28']['length'];
+            $offset = $extensions_arr_by_type['28']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 2) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_record_size_limit' => BinaryStream::uint16,
+                ]);
+            }
+        }
+
+        return $ret;
+    }
+
+    // Type: delegated_credential (34)
+    public static function extensions_delegated_credential(&$BinaryStream, &$extensions_arr_by_type)
+    {
+        $ret = [];
+        if (!empty($extensions_arr_by_type['34'])) {
+            $length = $extensions_arr_by_type['34']['length'];
+            $offset = $extensions_arr_by_type['34']['offset'];
+            $BinaryStream->setOffset($offset);
+
+            if ($length >= 2) {
+                $ret += $BinaryStream->unpack([
+                    'tls_tls_handshake_extensions_delegated_credential_supported_algorithms_len' => BinaryStream::uint16,
+                ]);
+
+                $algorithms_len = $ret['tls_tls_handshake_extensions_delegated_credential_supported_algorithms_len'] ?? 0;
+                if ($algorithms_len > 0 && $algorithms_len <= $length - 2) {
+                    $count = intval($algorithms_len / 2);
+                    $ret += $BinaryStream->unpack([
+                        'tls_tls_handshake_extensions_delegated_credential_supported_algorithms' => [BinaryStream::uint16, $count],
+                    ]);
+                }
+            }
+        }
+
+        return $ret;
+    }
 
 }

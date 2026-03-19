@@ -49,9 +49,10 @@ class TLS_FP
     public function ret()
     {
         $JA3 =  $this->GET_JA3();
+        $JA3N = $this->GET_JA3N();
         $JA4 =  $this->GET_JA4();
 
-        return array_merge($JA3,$JA4);
+        return array_merge($JA3,$JA3N,$JA4);
     }
 
     public function ret_by_server()
@@ -111,6 +112,37 @@ class TLS_FP
         return [
             'ja3s' => md5($ja3_str),
             'ja3s_str' => $ja3_str,
+
+        ];
+    }
+
+    public function GET_JA3N()
+    {
+        $tls = $this->hello_data['layers']['tls'];
+        $ja3_arr = [];
+        $ja3_arr[] = is_numeric($tls['tls_tls_handshake_version'])?$tls['tls_tls_handshake_version']:hexdec($tls['tls_tls_handshake_version']);
+
+        $cipher_suites = $this->get_tls_ext_data('tls_tls_handshake_ciphersuite',true,true);
+        $ja3_arr[] = empty($cipher_suites)?'':implode('-', $cipher_suites);
+
+        $extensions_type_arr = $this->get_tls_ext_data('tls_tls_handshake_extension_type',true);
+        sort($extensions_type_arr);
+
+        $ja3_arr[] = empty($extensions_type_arr) ? '' : implode('-', $extensions_type_arr);
+
+
+        $EllipticCurve = $this->get_tls_ext_data('tls_tls_handshake_extensions_supported_group',true,true);
+        $ja3_arr[] = empty($EllipticCurve) ? '' : implode('-',
+            $EllipticCurve);
+
+    
+        $EllipticCurvePointFormat = $this->get_tls_ext_data('tls_tls_handshake_extensions_ec_point_format',true);
+        $ja3_arr[] = empty($EllipticCurvePointFormat) ? '' : implode('-',
+            $EllipticCurvePointFormat);
+        $ja3_str = implode(',', $ja3_arr);
+        return [
+            'ja3_n' => md5($ja3_str),
+            'ja3_n_str' => $ja3_str,
 
         ];
     }
